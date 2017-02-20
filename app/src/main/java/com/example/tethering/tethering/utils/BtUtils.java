@@ -10,6 +10,7 @@ import org.slf4j.LoggerFactory;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.util.Set;
 
 public class BtUtils {
@@ -21,7 +22,7 @@ public class BtUtils {
         return bluetoothAdapter.getBondedDevices();
     }
 
-    public static void connectBtPan(Context context, final OnBluetoothPanConnected onBluetoothPanConnected) {
+    public static void openBtPan(Context context, final OnBluetoothPanConnected onBluetoothPanConnected) {
         try {
             Class classBluetoothPan = Class.forName("android.bluetooth.BluetoothPan");
             Constructor btPanConstructor = classBluetoothPan.getDeclaredConstructor(Context.class, BluetoothProfile.ServiceListener.class);
@@ -40,6 +41,16 @@ public class BtUtils {
                 }
             });
         } catch (ClassNotFoundException | NoSuchMethodException | IllegalAccessException | InstantiationException | InvocationTargetException e) {
+            LOG.error(e.toString());
+        }
+    }
+
+    public static void closeBtPann(BluetoothProfile bluetoothPan) {
+        try {
+            Method method = bluetoothPan.getClass().getDeclaredMethod("close");
+            method.setAccessible(true);
+            method.invoke(bluetoothPan);
+        } catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
             LOG.error(e.toString());
         }
     }

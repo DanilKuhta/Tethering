@@ -41,7 +41,11 @@ public class BtTetheringFragment extends Fragment {
     @Override
     public void onActivityCreated(Bundle savedInstanceState) {
         super.onActivityCreated(savedInstanceState);
-        BtUtils.connectBtPan(getActivity(), new BtUtils.OnBluetoothPanConnected() {
+        openBtPanConnection();
+    }
+
+    private void openBtPanConnection() {
+        BtUtils.openBtPan(getActivity(), new BtUtils.OnBluetoothPanConnected() {
             @Override
             public void onBluetoothPanConnected(BluetoothProfile bluetoothPan) {
                 synchronized (BtTetheringFragment.this) {
@@ -57,6 +61,17 @@ public class BtTetheringFragment extends Fragment {
                 }
             }
         });
+    }
+
+    private synchronized void closeBtPanConnection() {
+        if (bluetoothPan != null) {
+            BtUtils.closeBtPann(bluetoothPan);
+        }
+    }
+
+    private void reopenBtPanConnection() {
+        closeBtPanConnection();
+        openBtPanConnection();
     }
 
     @Override
@@ -77,9 +92,10 @@ public class BtTetheringFragment extends Fragment {
                 synchronized (BtTetheringFragment.this) {
                     if (bluetoothPan == null) return;
                     BluetoothDevice bluetoothDevice = (BluetoothDevice) BtUtils.getBoundedDevices().toArray()[spinner.getSelectedItemPosition()];
-                    LOG.debug("tethering state :" + BtUtils.getTetheringDeviceConnectionState(bluetoothPan, bluetoothDevice));
+                    LOG.debug("current tethering state :" + BtUtils.getTetheringDeviceConnectionState(bluetoothPan, bluetoothDevice));
                     if (BtUtils.isConnectedTetheringDevice(bluetoothPan, bluetoothDevice)) {
                         boolean result = BtUtils.disconnectTetheringDevice(bluetoothPan, bluetoothDevice);
+                        reopenBtPanConnection();
                         updateEnableState(!result);
                     } else {
                         boolean result = BtUtils.connectTetheringDevice(bluetoothPan, bluetoothDevice);
