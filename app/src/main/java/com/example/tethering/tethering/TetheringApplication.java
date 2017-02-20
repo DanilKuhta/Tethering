@@ -15,6 +15,5 @@ public class TetheringApplication extends Application {
         super.onCreate();
         LOG = LoggerFactory.getLogger(TetheringApplication.class);
         LOG.debug("application created");
-        Log.d(TetheringApplication.class.getSimpleName(), "application created second");
     }
 }
