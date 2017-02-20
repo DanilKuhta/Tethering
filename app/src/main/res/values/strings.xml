@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name">Tethering</string>
+    <string name="disable">disable</string>
+    <string name="enable">enable</string>
+</resources>
