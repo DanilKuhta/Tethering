@@ -1,7 +1,6 @@
 package com.example.tethering.tethering;
 
 import android.app.Fragment;
-import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothProfile;
 import android.os.Bundle;
@@ -15,12 +14,17 @@ import android.widget.Button;
 
 import com.example.tethering.tethering.utils.BtUtils;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 
 public class BtTetheringFragment extends Fragment {
+
+    private static Logger LOG = LoggerFactory.getLogger(BtTetheringFragment.class);
+    private BluetoothProfile bluetoothPan;
 
     @Nullable
     @Override
@@ -32,6 +36,27 @@ public class BtTetheringFragment extends Fragment {
     public void onViewCreated(View view, Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
         initUI();
+    }
+
+    @Override
+    public void onActivityCreated(Bundle savedInstanceState) {
+        super.onActivityCreated(savedInstanceState);
+        BtUtils.connectBtPan(getActivity(), new BtUtils.OnBluetoothPanConnected() {
+            @Override
+            public void onBluetoothPanConnected(BluetoothProfile bluetoothPan) {
+                synchronized (BtTetheringFragment.this) {
+                    BtTetheringFragment.this.bluetoothPan = bluetoothPan;
+                    BtUtils.enableBtTethering(bluetoothPan, true);
+                }
+            }
+
+            @Override
+            public void onBluetoothPanDisconnected() {
+                synchronized (BtTetheringFragment.this) {
+                    BtTetheringFragment.this.bluetoothPan = null;
+                }
+            }
+        });
     }
 
     @Override
@@ -49,19 +74,18 @@ public class BtTetheringFragment extends Fragment {
         getView().findViewById(R.id.process).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                BtUtils.enableBtTethering(getActivity(), true, new BtUtils.OnBluetoothPanConnected() {
-                    @Override
-                    public void onBluetoothPanConnected(BluetoothProfile bluetoothPan) {
-                        BluetoothDevice bluetoothDevice = (BluetoothDevice) BtUtils.getBoundedDevices().toArray()[spinner.getSelectedItemPosition()];
-                        if (BtUtils.isConnectedTetheringDevice(bluetoothPan, bluetoothDevice)) {
-                            boolean result = BtUtils.disconnectTetheringDevice(bluetoothPan, bluetoothDevice);
-                            updateEnableState(!result);
-                        } else {
-                            boolean result = BtUtils.connectTetheringDevice(bluetoothPan, bluetoothDevice);
-                            updateEnableState(result);
-                        }
+                synchronized (BtTetheringFragment.this) {
+                    if (bluetoothPan == null) return;
+                    BluetoothDevice bluetoothDevice = (BluetoothDevice) BtUtils.getBoundedDevices().toArray()[spinner.getSelectedItemPosition()];
+                    LOG.debug("tethering state :" + BtUtils.getTetheringDeviceConnectionState(bluetoothPan, bluetoothDevice));
+                    if (BtUtils.isConnectedTetheringDevice(bluetoothPan, bluetoothDevice)) {
+                        boolean result = BtUtils.disconnectTetheringDevice(bluetoothPan, bluetoothDevice);
+                        updateEnableState(!result);
+                    } else {
+                        boolean result = BtUtils.connectTetheringDevice(bluetoothPan, bluetoothDevice);
+                        updateEnableState(result);
                     }
-                });
+                }
             }
         });
         updateEnableState(false);
